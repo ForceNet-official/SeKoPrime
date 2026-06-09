@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Hack time | ForceNet & SeKoPrime — посты, скрипты, медиа</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s, box-shadow 0.2s;
+        }
+
+        :root {
+            --bg-primary: #0a0c12;
+            --bg-secondary: #10131c;
+            --bg-card: rgba(18, 22, 35, 0.85);
+            --border-glow: rgba(0, 255, 255, 0.2);
+            --text-main: #eef5ff;
+            --text-dim: #9aa8c7;
+            --accent-cyan: #00f2fe;
+            --accent-purple: #a855f7;
+            --accent-pink: #ff4d8c;
+            --gradient-btn: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            --shadow-neon: 0 8px 20px rgba(0, 242, 254, 0.15);
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --card-radius: 1.5rem;
+        }
+
+        body.light {
+            --bg-primary: #f2f5fc;
+            --bg-secondary: #e6edf6;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --border-glow: rgba(0, 180, 230, 0.4);
+            --text-main: #0a1128;
+            --text-dim: #2c3e66;
+            --accent-cyan: #0077b6;
+            --accent-purple: #7b2cbf;
+            --accent-pink: #d43f7a;
+            --gradient-btn: linear-gradient(135deg, #0077b6, #00b4d8);
+            --shadow-neon: 0 8px 20px rgba(0, 119, 182, 0.2);
+            --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            line-height: 1.5;
+        }
+
+        .gradient-orb {
+            position: fixed;
+            width: 70vw;
+            height: 70vw;
+            background: radial-gradient(circle, rgba(0,242,254,0.06) 0%, rgba(168,85,247,0.03) 100%);
+            border-radius: 50%;
+            top: -20vh;
+            right: -20vw;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-glow);
+        }
+
+        .logo-area h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-area p {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .theme-switch {
+            background: var(--bg-secondary);
+            backdrop-filter: blur(4px);
+            padding: 0.4rem;
+            border-radius: 60px;
+            display: flex;
+            gap: 0.5rem;
+            border: 1px solid var(--border-glow);
+        }
+
+        .theme-btn {
+            background: transparent;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--text-dim);
+        }
+
+        .theme-btn.active {
+            background: var(--gradient-btn);
+            color: #fff;
+            box-shadow: var(--shadow-neon);
+        }
+
+        /* сетка постов */
+        .posts-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        /* карточка поста */
+        .post-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border-radius: var(--card-radius);
+            border: 1px solid var(--border-glow);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-neon);
+            border-color: var(--accent-cyan);
+        }
+
+        .post-content {
+            padding: 1.8rem;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            border-bottom: 1px dashed var(--border-glow);
+            padding-bottom: 0.5rem;
+        }
+
+        .post-type {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            background: rgba(0, 242, 254, 0.15);
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            letter-spacing: 1px;
+            color: var(--accent-cyan);
+        }
+
+        .post-date {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        .post-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 0.75rem 0 0.5rem;
+            background: linear-gradient(135deg, #fff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+
+        body.light .post-title {
+            background: linear-gradient(135deg, #0a1128, var(--accent-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .post-text {
+            margin: 1.2rem 0;
+            color: var(--text-dim);
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+
+        /* медиа контент внутри поста */
+        .media-container {
+            margin: 1.2rem 0;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .post-img {
+            max-width: 100%;
+            border-radius: 1rem;
+            display: block;
+            border: 1px solid var(--border-glow);
+        }
+
+        .post-video {
+            width: 100%;
+            border-radius: 1rem;
+            outline: none;
+            background: #000;
+        }
+
+        .file-download {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 0.8rem 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-glow);
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        .file-download:hover {
+            background: var(--accent-cyan);
+            color: #0a0c12;
+            border-color: var(--accent-cyan);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 3rem;
+            background: var(--bg-card);
+            border-radius: 2rem;
+            color: var(--text-dim);
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px dashed var(--border-glow);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 680px) {
+            .wrapper { padding: 1rem; }
+            .post-title { font-size: 1.3rem; }
+            .post-content { padding: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="gradient-orb"></div>
+<div class="wrapper">
+    <div class="header">
+        <div class="logo-area">
+            <h1>⧩ HACK TIME</h1>
+            <p>// ForceNet · SeKoPrime // скрипты, эксплойты, туториалы //</p>
+        </div>
+        <div class="theme-switch" id="themeToggleGroup">
+            <button class="theme-btn active" data-theme="dark">🌙 Dark</button>
+            <button class="theme-btn" data-theme="light">☀️ Light</button>
+        </div>
+    </div>
+
+    <!-- Сетка постов будет загружена сюда -->
+    <div id="postsContainer" class="posts-grid">
+        <div class="empty-message">⏳ загрузка постов из репозитория...</div>
+    </div>
+
+    <div class="footer-note">
+        Hack time // публикация из Git-репозитория — новые посты наверху
+    </div>
+</div>
+
+<script>
+    // ---------------------- ТЕМА (светлая/тёмная) --------------------------
+    const themeBtns = document.querySelectorAll('.theme-btn');
+    const bodyEl = document.body;
+
+    function setTheme(theme) {
+        if(theme === 'light') {
+            bodyEl.classList.add('light');
+            localStorage.setItem('hacktime_theme', 'light');
+            themeBtns.forEach(btn => {
+                if(btn.getAttribute('data-theme') === 'light') btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        } else {
+            bodyEl.classList.remove('light');
+            localStorage.setItem('hacktime_theme', 'dark');
+            themeBtns.forEach(btn => {
+                if(btn.getAttribute('data-theme') === 'dark') btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+    }
+
+    const savedTheme = localStorage.getItem('hacktime_theme');
+    if(savedTheme === 'light') setTheme('light');
+    else setTheme('dark');
+
+    themeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const theme = btn.getAttribute('data-theme');
+            setTheme(theme);
+        });
+    });
+
+    // ---------------------- ЗАГРУЗКА ПОСТОВ ИЗ ПАПКИ (Git-подобная логика) -----------------
+    // Предполагается, что index.html лежит в корне репозитория,
+    // а посты — в папке "posts/" и имеют имена post_*.html, post_anything.html
+    // Файлы будут загружаться через fetch, парситься как HTML и отображаться.
+
+    const postsContainer = document.getElementById('postsContainer');
+
+    // Функция получения списка .html файлов, начинающихся с "post"
+    // Так как из клиентского JS нельзя просто получить список файлов в папке без серверного индекса,
+    // мы используем подход: заранее задаём список постов из внешнего массива, который может обновляться
+    // через скрипт на стороне сервера (например, generate-filelist.js), либо вручную.
+    // НО чтобы полностью соответствовать задаче "файлы будут браться из того же git-репозитория",
+    // мы будем динамически запрашивать список из файла "posts_list.json", который при каждой сборке
+    // или через GitHub Actions генерируется. Для автономной работы — создадим механизм:
+    // если нет списка, просканировать папку через fetch-запросы с проверкой существования.
+    // Реализуем умный авто-поиск по префиксу "post" и расширению .html.
+
+    // Ручной режим: попробуем предустановленный массив (но можно расширить)
+    // Для реального использования — создай файл posts_list.json в корне или просто заполни массив вручную при добавлении постов.
+    // Я сделаю динамический сбор: будем проверять заранее известный набор до 50 постов post_1 ... post_50
+    // и реальные посты, которые ты создаёшь, добавим вручную через массив (ты всегда можешь дописать новые имена вручную)
+    // Это самый надёжный способ без бэкенда.
+
+    // -------------------------------------------------------------
+    // 👇👇👇  ТУТ ТЫ ДОБАВЛЯЕШЬ НОВЫЕ ПОСТЫ (просто имя файла без .html)
+    // Новые посты добавляй в НАЧАЛО массива, чтобы отображались сверху.
+    let postsList = [
+        "post_my_awesome_script",      // пример: post_my_awesome_script.html
+        "post_video_tutorial",
+        "post_photo_gallery",
+        "post_file_archive"
+    ];
+    // Если ты хочешь, чтобы посты автоматически подхватывались из папки —
+    // создай в корне репозитория файл posts_manifest.json и сюда его загружай.
+    // Я добавляю умную загрузку: сначала пробуем загрузить внешний manifest.json,
+    // если его нет — используем массив выше.
+    // -------------------------------------------------------------
+
+    async function fetchPostsManifest() {
+        try {
+            const response = await fetch('posts_manifest.json');
+            if(response.ok) {
+                const manifest = await response.json();
+                if(Array.isArray(manifest) && manifest.length) {
+                    return manifest.filter(name => name.startsWith('post'));
+                }
+            }
+        } catch(e) { console.log("manifest not found, using manual list"); }
+        return null;
+    }
+
+    // загрузка конкретного поста по имени файла (без расширения)
+    async function loadPost(postName) {
+        const url = `posts/${postName}.html`;
+        try {
+            const res = await fetch(url);
+            if(!res.ok) return null;
+            const htmlText = await res.text();
+            // парсим содержимое поста
+            return parsePostHTML(htmlText, postName);
+        } catch(err) {
+            console.warn(`не удалось загрузить пост ${postName}`, err);
+            return null;
+        }
+    }
+
+    // Парсинг HTML-кода поста, извлечение данных по шаблонам:
+    // Поддерживаем 4 типа:
+    // тип 1: фото (должен быть тег <post-img src="..."> или data-image)
+    // тип 2: видео
+    // тип 3: видео + файл
+    // тип 4: файл
+    // Также любой текст внутри <post-text>...</post-text>
+    function parsePostHTML(html, postId) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Заголовок поста (берём из <title> или из <post-title>)
+        let title = doc.querySelector('post-title')?.innerText || doc.title || postId;
+        let textContent = doc.querySelector('post-text')?.innerHTML || doc.querySelector('post-text')?.innerText || '';
+        
+        // Тип поста и контент
+        let type = 1; // по умолчанию фото
+        let imgSrc = null;
+        let videoSrc = null;
+        let fileUrl = null;
+        let fileName = null;
+        
+        // ищем специальные теги или атрибуты
+        const imgTag = doc.querySelector('post-img');
+        if(imgTag) {
+            type = 1;
+            imgSrc = imgTag.getAttribute('src');
+        }
+        
+        const videoTag = doc.querySelector('post-video');
+        if(videoTag) {
+            const src = videoTag.getAttribute('src');
+            if(src) {
+                // если есть и видео и дополнительно файл - тип 3, иначе тип 2
+                type = 2;
+                videoSrc = src;
+            }
+        }
+        
+        const fileTag = doc.querySelector('post-file');
+        if(fileTag) {
+            const fUrl = fileTag.getAttribute('src');
+            const fName = fileTag.getAttribute('name') || fUrl?.split('/').pop() || 'download';
+            if(videoSrc) {
+                type = 3; // видео + файл
+                fileUrl = fUrl;
+                fileName = fName;
+            } else {
+                type = 4; // просто файл
+                fileUrl = fUrl;
+                fileName = fName;
+            }
+        }
+        
+        // Если есть только файл, а видео нет, переопределяем
+        if(fileTag && !videoSrc) type = 4;
+        else if(videoSrc && !fileTag) type = 2;
+        else if(videoSrc && fileTag) type = 3;
+        else if(imgSrc) type = 1;
+        
+        // дата создания - можно вытащить из атрибута post-date или сгенерировать по имени файла/текущей
+        let dateStr = doc.querySelector('post-date')?.getAttribute('value') || 
+                      doc.querySelector('post-date')?.innerText || 
+                      new Date().toLocaleDateString();
+        
+        // РАБОТА С ПУТЯМИ: все медиа берутся относительно папки posts/ (если не абсолютные)
+        function fixPath(path) {
+            if(!path) return null;
+            if(path.startsWith('http') || path.startsWith('//')) return path;
+            return `posts/${path}`;
+        }
+        
+        if(imgSrc) imgSrc = fixPath(imgSrc);
+        if(videoSrc) videoSrc = fixPath(videoSrc);
+        if(fileUrl) fileUrl = fixPath(fileUrl);
+        
+        return {
+            id: postId,
+            title: title.trim(),
+            text: textContent,
+            type: type,
+            img: imgSrc,
+            video: videoSrc,
+            fileUrl: fileUrl,
+            fileName: fileName,
+            date: dateStr,
+            rawTimestamp: getTimestampFromId(postId) // для сортировки (чем новее — тем выше)
+        };
+    }
+    
+    // попытка вытащить временную метку из имени поста (если есть post_20250320_...)
+    function getTimestampFromId(id) {
+        const match = id.match(/post_(\d{8})/);
+        if(match) return parseInt(match[1], 10);
+        // иначе используем текущее время минус индекс (чтобы не перепутать)
+        return 0;
+    }
+    
+    // отрисовка поста в DOM
+    function renderPost(post) {
+        const card = document.createElement('div');
+        card.className = 'post-card';
+        
+        let mediaHTML = '';
+        if(post.type === 1 && post.img) {
+            mediaHTML = `<div class="media-container"><img class="post-img" src="${post.img}" alt="preview" loading="lazy"></div>`;
+        } 
+        else if(post.type === 2 && post.video) {
+            mediaHTML = `<div class="media-container"><video class="post-video" controls preload="metadata"><source src="${post.video}" type="video/mp4">Ваш браузер не поддерживает видео</video></div>`;
+        }
+        else if(post.type === 3 && post.video && post.fileUrl) {
+            mediaHTML = `<div class="media-container">
+                            <video class="post-video" controls preload="metadata"><source src="${post.video}" type="video/mp4"></video>
+                            <a class="file-download" href="${post.fileUrl}" download="${post.fileName}">📎 Скачать файл: ${post.fileName}</a>
+                         </div>`;
+        }
+        else if(post.type === 4 && post.fileUrl) {
+            mediaHTML = `<div class="media-container">
+                            <a class="file-download" href="${post.fileUrl}" download="${post.fileName}">📁 Скачать архив / файл: ${post.fileName}</a>
+                         </div>`;
+        }
+        
+        // если нет медиа, но есть текст — просто покажем текст
+        const typeLabel = post.type === 1 ? '📸 ФОТО' : (post.type === 2 ? '🎥 ВИДЕО' : (post.type === 3 ? '🎬 ВИДЕО + ФАЙЛ' : '📦 ФАЙЛ/АРХИВ'));
+        
+        card.innerHTML = `
+            <div class="post-content">
+                <div class="post-header">
+                    <span class="post-type">${typeLabel}</span>
+                    <span class="post-date">${post.date}</span>
+                </div>
+                <div class="post-title">${escapeHtml(post.title)}</div>
+                ${post.text ? `<div class="post-text">${escapeHtml(post.text).replace(/\n/g, '<br>')}</div>` : ''}
+                ${mediaHTML}
+            </div>
+        `;
+        return card;
+    }
+    
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+    
+    // главная загрузка и отображение постов
+    async function loadAllPosts() {
+        postsContainer.innerHTML = '<div class="empty-message">⏳ загрузка постов...</div>';
+        
+        let finalPostsList = [];
+        // пробуем получить manifest
+        const manifest = await fetchPostsManifest();
+        if(manifest && manifest.length) {
+            finalPostsList = manifest;
+        } else {
+            finalPostsList = [...postsList];
+        }
+        
+        // удаляем дубликаты
+        finalPostsList = [...new Set(finalPostsList)];
+        
+        const loadedPosts = [];
+        for(const postName of finalPostsList) {
+            const postData = await loadPost(postName);
+            if(postData) {
+                loadedPosts.push(postData);
+            }
+        }
+        
+        // сортировка: новые посты сверху
+        // используем timestamp из имени (чем больше число, тем новее) либо по порядку если timestamp одинаковый
+        loadedPosts.sort((a,b) => {
+            if(a.rawTimestamp !== b.rawTimestamp) return b.rawTimestamp - a.rawTimestamp;
+            return b.id.localeCompare(a.id);
+        });
+        
+        if(loadedPosts.length === 0) {
+            postsContainer.innerHTML = `<div class="empty-message">📭 постов пока нет. Создайте первый пост в папке posts/ с именем post_*.html</div>`;
+            return;
+        }
+        
+        postsContainer.innerHTML = '';
+        for(const post of loadedPosts) {
+            const postElement = renderPost(post);
+            postsContainer.appendChild(postElement);
+        }
+    }
+    
+    // запуск
+    loadAllPosts();
+    
+    // для разработки: если нужно вручную обновить список постов (например после добавления новых)
+    // просто обнови массив postsList и вызови loadAllPosts, но для этого можно сделать кнопку,
+    // но по заданию необязательно, просто при перезагрузке страницы всё подхватится.
+    // ВАЖНО: Чтобы посты работали, создайте папку "posts" рядом с index.html и положите туда post_*.html,
+    // а также медиафайлы с расширением .png, .mp4 и т.д. (фото .png, видео любые)
+    console.log("Hack time — система постов готова. Шаблоны постов описаны ниже ↓");
+</script>
+
+<!-- ====================== ШАБЛОНЫ ПОСТОВ (примеры для копирования) ======================= -->
+<!-- 
+    ═══════════════════════════════════════════════════════════════
+    КАК СОЗДАТЬ ПОСТ: внутри папки /posts/ создай файл с именем post_что_угодно.html
+    Например: post_my_first_hack.html
+    
+    Внутри файла используй следующие теги (всё остальное игнорируется):
+    
+    █ 1. ТИП ПОСТА: ТОЛЬКО ФОТО (.png)
+    -----------------------------------------------------------------
+    <title>Название поста (видимое в карточке)</title>
+    <post-text>Твой текст описания... можно несколько строк</post-text>
+    <post-img src="my_photo.png"></post-img>
+    (файл my_photo.png должен лежать в папке posts/)
+    
+    █ 2. ТИП ПОСТА: ТОЛЬКО ВИДЕО
+    -----------------------------------------------------------------
+    <title>Крутой видео туториал</title>
+    <post-text>объяснение</post-text>
+    <post-video src="tutorial.mp4"></post-video>
+    
+    █ 3. ТИП ПОСТА: ВИДЕО + ФАЙЛ
+    -----------------------------------------------------------------
+    <title>Скрипт + демка</title>
+    <post-text>видеоинструкция и архив со скриптом</post-text>
+    <post-video src="demo.mp4"></post-video>
+    <post-file src="script.zip" name="exploit_pack.zip"></post-file>
+    
+    █ 4. ТИП ПОСТА: ТОЛЬКО ФАЙЛ (архив, скрипт, документ)
+    -----------------------------------------------------------------
+    <title>Эксплойт ForceNet</title>
+    <post-text>готовый модуль для SeKoPrime</post-text>
+    <post-file src="forcenet_exploit.py" name="forcenet_poc.py"></post-file>
+    
+    -----------------------------------------------------------------
+    * Дополнительно: можно указать дату <post-date value="2025-03-20"> или она будет автоматической.
+    * Все изображения должны быть .png (рекомендовано), видео .mp4, файлы любые.
+    * Имена медиафайлов указывай относительно папки posts/ (просто имя файла).
+    -----------------------------------------------------------------
+    
+    ПРИМЕР ГОТОВОГО ПОСТА (скопируй в файл posts/post_example.html):
+    
+    <title>SSRF + ForceNet модуль</title>
+    <post-text>Новая техника обхода корпоративных сетей. Прикладываю скриншоты.</post-text>
+    <post-img src="ssrf_diagram.png"></post-img>
+    <post-file src="ssrf_scanner.py" name="ssrf_auto.py"></post-file>
+    
+-->
+</body>
+</html>
