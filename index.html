@@ -122,17 +122,6 @@
             box-shadow: var(--shadow-neon);
         }
 
-        .refresh-btn {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-glow);
-            padding: 0.5rem 1rem;
-            border-radius: 40px;
-            color: var(--accent-cyan);
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-left: 1rem;
-        }
-
         .posts-grid {
             display: flex;
             flex-direction: column;
@@ -286,12 +275,9 @@
             <h1>⧩ HACK TIME</h1>
             <p>ForceNet | SeKoPrime</p>
         </div>
-        <div style="display: flex; gap: 0.8rem; align-items: center;">
-            <button class="refresh-btn" id="scanBtn">🔄 Обновить список постов</button>
-            <div class="theme-switch" id="themeToggleGroup">
-                <button class="theme-btn active" data-theme="dark">🌙 Dark</button>
-                <button class="theme-btn" data-theme="light">☀️ Light</button>
-            </div>
+        <div class="theme-switch" id="themeToggleGroup">
+            <button class="theme-btn active" data-theme="dark">🌙 Dark</button>
+            <button class="theme-btn" data-theme="light">☀️ Light</button>
         </div>
     </div>
 
@@ -300,7 +286,7 @@
     </div>
 
     <div class="footer-note">
-        ForceNet & SeKoPrime — посты в одной папке с index.html, имя начинается с post_
+        ForceNet & SeKoPrime — новые посты наверху
     </div>
 </div>
 
@@ -335,31 +321,39 @@
         btn.addEventListener('click', () => setTheme(btn.getAttribute('data-theme')));
     });
 
-    // ========== ПОСТЫ ==========
-    const postsContainer = document.getElementById('postsContainer');
-    const scanBtn = document.getElementById('scanBtn');
-
-    // Генерация списка постов через попытку загрузки (перебираем возможные имена)
-    // Но самый надёжный способ — создать posts_list.json вручную один раз
-    // Сделаем так: если есть posts_list.json — читаем его, иначе показываем инструкцию
-    // + кнопка "обновить" создаёт этот файл через скачивание (вручную сохранить)
+    // ========== АВТОМАТИЧЕСКОЕ ОБНАРУЖЕНИЕ ПОСТОВ ==========
+    // Без JSON, без кнопок. Просто ищем все post_*.html перебором до 200
     
-    let currentPostsList = [];
-
-    async function loadPostsList() {
-        try {
-            const res = await fetch('posts_list.json?nocache=' + Date.now());
-            if(res.ok) {
-                const list = await res.json();
-                if(Array.isArray(list)) {
-                    currentPostsList = list.filter(name => name.startsWith('post') && name.endsWith('.html')).map(n => n.replace('.html', ''));
-                    return true;
-                }
-            }
-        } catch(e) {}
-        return false;
+    const postsContainer = document.getElementById('postsContainer');
+    
+    async function findPosts() {
+        const found = [];
+        // перебираем post_1.html ... post_200.html и post_любоеимя.html через Head запросы
+        // сначала числовые
+        for(let i = 1; i <= 200; i++) {
+            const name = `post_${i}`;
+            const url = `${name}.html`;
+            try {
+                const res = await fetch(url, { method: 'HEAD' });
+                if(res.ok) found.push(name);
+            } catch(e) {}
+        }
+        
+        // дополнительные имена: post_ + латиница (если есть)
+        const extraNames = [
+            'post_example', 'post_demo', 'post_tutorial', 'post_script', 'post_tool'
+        ];
+        for(const name of extraNames) {
+            const url = `${name}.html`;
+            try {
+                const res = await fetch(url, { method: 'HEAD' });
+                if(res.ok && !found.includes(name)) found.push(name);
+            } catch(e) {}
+        }
+        
+        return found;
     }
-
+    
     async function loadPost(postName) {
         const url = `${postName}.html`;
         try {
@@ -371,7 +365,7 @@
             return null;
         }
     }
-
+    
     function parsePostHTML(html, postId) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
@@ -424,15 +418,15 @@
                       doc.querySelector('post-date')?.innerText || 
                       new Date().toLocaleDateString();
         
-        function fixPath(path) {
-            if(!path) return null;
-            if(path.startsWith('http') || path.startsWith('//')) return path;
-            return path;
+        // Извлекаем timestamp из имени поста (post_20250320_название)
+        let timestamp = 0;
+        const dateMatch = postId.match(/post_(\d{8})/);
+        if(dateMatch) timestamp = parseInt(dateMatch[1]);
+        else {
+            // если нет даты в имени, используем порядковый номер как fallback
+            const numMatch = postId.match(/post_(\d+)/);
+            if(numMatch) timestamp = parseInt(numMatch[1]);
         }
-        
-        if(imgSrc) imgSrc = fixPath(imgSrc);
-        if(videoSrc) videoSrc = fixPath(videoSrc);
-        if(fileUrl) fileUrl = fixPath(fileUrl);
         
         return {
             id: postId,
@@ -444,10 +438,7 @@
             fileUrl: fileUrl,
             fileName: fileName,
             date: dateStr,
-            rawTimestamp: (() => {
-                const match = postId.match(/post_(\d{8})/);
-                return match ? parseInt(match[1]) : 0;
-            })()
+            timestamp: timestamp
         };
     }
     
@@ -460,7 +451,7 @@
             mediaHTML = `<div class="media-container"><img class="post-img" src="${post.img}" alt="preview" loading="lazy" onerror="this.style.display='none'"></div>`;
         } 
         else if(post.type === 2 && post.video) {
-            mediaHTML = `<div class="media-container"><video class="post-video" controls preload="metadata"><source src="${post.video}">Ваш браузер не поддерживает видео</video></div>`;
+            mediaHTML = `<div class="media-container"><video class="post-video" controls preload="metadata"><source src="${post.video}"></video></div>`;
         }
         else if(post.type === 3 && post.video && post.fileUrl) {
             mediaHTML = `<div class="media-container">
@@ -476,62 +467,64 @@
         
         const typeLabel = post.type === 1 ? '📸 ФОТО' : (post.type === 2 ? '🎥 ВИДЕО' : (post.type === 3 ? '🎬 ВИДЕО + ФАЙЛ' : '📦 ФАЙЛ'));
         
+        function escape(str) {
+            if(!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
         card.innerHTML = `
             <div class="post-content">
                 <div class="post-header">
                     <span class="post-type">${typeLabel}</span>
-                    <span class="post-date">${escapeHtml(post.date)}</span>
+                    <span class="post-date">${escape(post.date)}</span>
                 </div>
-                <div class="post-title">${escapeHtml(post.title)}</div>
-                ${post.text ? `<div class="post-text">${escapeHtml(post.text).replace(/\n/g, '<br>')}</div>` : ''}
+                <div class="post-title">${escape(post.title)}</div>
+                ${post.text ? `<div class="post-text">${escape(post.text).replace(/\n/g, '<br>')}</div>` : ''}
                 ${mediaHTML}
             </div>
         `;
         return card;
     }
     
-    function escapeHtml(str) {
-        if(!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    async function displayPosts() {
-        postsContainer.innerHTML = '<div class="empty-message">⏳ загрузка постов...</div>';
+    async function loadAllPosts() {
+        postsContainer.innerHTML = '<div class="empty-message">⏳ загрузка...</div>';
         
-        if(currentPostsList.length === 0) {
+        const postNames = await findPosts();
+        
+        if(postNames.length === 0) {
             postsContainer.innerHTML = `<div class="empty-message">
-                📭 Нет списка постов.<br><br>
-                <strong>Как добавить пост:</strong><br>
-                1. Создай файл post_название.html (рядом с index.html)<br>
-                2. Напиши внутри по шаблону (см. консоль или пример ниже)<br>
-                3. Нажми «Обновить список постов» → сохрани posts_list.json<br><br>
-                <button id="createExampleBtn" style="background:var(--accent-cyan); border:none; padding:8px 20px; border-radius:30px; cursor:pointer;">📝 Создать пример поста</button>
+                📭 Нет постов.<br><br>
+                <strong>Как создать пост:</strong><br>
+                1. Создай файл <code>post_1.html</code> (или post_любоеимя.html)<br>
+                2. Вставь внутрь шаблон:<br>
+                <code style="display:block;background:#00000033;padding:1rem;border-radius:1rem;margin-top:0.5rem;">
+                &lt;title&gt;Название поста&lt;/title&gt;<br>
+                &lt;post-text&gt;Текст описания&lt;/post-text&gt;<br>
+                &lt;post-img src="foto.png"&gt;&lt;/post-img&gt;<br>
+                &lt;post-file src="script.py" name="script.py"&gt;&lt;/post-file&gt;
+                </code><br>
+                3. Положи рядом с index.html<br>
+                4. Обнови страницу — пост появится автоматически
             </div>`;
-            const exampleBtn = document.getElementById('createExampleBtn');
-            if(exampleBtn) {
-                exampleBtn.onclick = () => createExamplePost();
-            }
             return;
         }
         
         const loadedPosts = [];
-        for(const postName of currentPostsList) {
-            const postData = await loadPost(postName);
-            if(postData) loadedPosts.push(postData);
+        for(const name of postNames) {
+            const post = await loadPost(name);
+            if(post) loadedPosts.push(post);
         }
         
-        loadedPosts.sort((a,b) => {
-            if(a.rawTimestamp !== b.rawTimestamp) return b.rawTimestamp - a.rawTimestamp;
-            return b.id.localeCompare(a.id);
-        });
+        // сортировка: новые сверху (чем больше timestamp, тем новее)
+        loadedPosts.sort((a,b) => b.timestamp - a.timestamp);
         
         if(loadedPosts.length === 0) {
-            postsContainer.innerHTML = `<div class="empty-message">⚠️ Посты найдены, но не загрузились. Проверь имена файлов.</div>`;
+            postsContainer.innerHTML = '<div class="empty-message">⚠️ Посты найдены, но не загрузились</div>';
             return;
         }
         
@@ -541,123 +534,53 @@
         }
     }
     
-    // Сканирование: генерируем posts_list.json перебором вероятных имён
-    // Самый простой способ для пользователя — вручную создать posts_list.json
-    // Но сделаем "умное сканирование": пробуем fetch до 50 вариантов post_1 ... post_50
-    async function smartScan() {
-        postsContainer.innerHTML = '<div class="empty-message">🔍 Сканирование: ищем post_*.html...</div>';
-        const found = [];
-        for(let i = 1; i <= 50; i++) {
-            const testName = `post_${i}`;
-            const res = await fetch(`${testName}.html`, { method: 'HEAD' });
-            if(res.ok) {
-                found.push(`${testName}.html`);
-            }
-            // небольшая задержка чтобы не спамить
-            await new Promise(r => setTimeout(r, 10));
-        }
-        
-        if(found.length > 0) {
-            // сохраняем в localStorage и предлагаем скачать posts_list.json
-            localStorage.setItem('hacktime_posts_list', JSON.stringify(found));
-            currentPostsList = found.map(f => f.replace('.html', ''));
-            alert(`Найдено ${found.length} постов! Чтобы они сохранились навсегда, нажми ОК и сохрани файл.`);
-            downloadPostsList(found);
-        } else {
-            alert('Не найдено ни одного post_*.html. Создай файл типа post_1.html');
-            currentPostsList = [];
-        }
-        await displayPosts();
-    }
-    
-    function downloadPostsList(list) {
-        const data = JSON.stringify(list, null, 2);
-        const blob = new Blob([data], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'posts_list.json';
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-    
-    async function createExamplePost() {
-        const exampleContent = `<title>Пример поста ForceNet</title>
-<post-text>Это пример поста. Видео/фото клади рядом с index.html и указывай просто имя файла.</post-text>
-<post-img src="example.png"></post-img>
-<post-file src="script.py" name="exploit.py"></post-file>`;
-        
-        const blob = new Blob([exampleContent], {type: 'text/html'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'post_example.html';
-        a.click();
-        URL.revokeObjectURL(url);
-        alert('Пример поста скачан. Положи его рядом с index.html и создай example.png/script.py по желанию. Потом нажми "Обновить список постов"');
-    }
-    
-    // Инициализация
-    async function init() {
-        const hasList = await loadPostsList();
-        if(hasList) {
-            await displayPosts();
-        } else {
-            // пробуем восстановить из localStorage
-            const saved = localStorage.getItem('hacktime_posts_list');
-            if(saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    currentPostsList = parsed.map(f => f.replace('.html', ''));
-                    await displayPosts();
-                } catch(e) { startEmpty(); }
-            } else {
-                startEmpty();
-            }
-        }
-    }
-    
-    function startEmpty() {
-        currentPostsList = [];
-        displayPosts();
-    }
-    
-    scanBtn.onclick = async () => {
-        await smartScan();
-    };
-    
-    init();
+    // запуск
+    loadAllPosts();
 </script>
 
 <!-- ========== ШАБЛОНЫ ПОСТОВ ========== -->
 <!-- 
     КАК СОЗДАТЬ ПОСТ:
-    Файл должен лежать РЯДОМ с index.html, имя начинаться с post_ (например post_1.html, post_myhack.html)
+    
+    Файл должен лежать РЯДОМ с index.html, имя начинается с post_ (например post_1.html, post_myhack.html)
     
     Внутри файла используй теги:
     
-    1. ФОТО (.png):
-    <title>Название</title>
-    <post-text>текст</post-text>
-    <post-img src="kartinka.png"></post-img>
+    ┌─────────────────────────────────────────────────────┐
+    │ 1. ФОТО (.png)                                      │
+    ├─────────────────────────────────────────────────────┤
+    │ <title>Название</title>                             │
+    │ <post-text>текст</post-text>                        │
+    │ <post-img src="kartinka.png"></post-img>            │
+    └─────────────────────────────────────────────────────┘
     
-    2. ВИДЕО:
-    <title>Название</title>
-    <post-text>текст</post-text>
-    <post-video src="video.mp4"></post-video>
+    ┌─────────────────────────────────────────────────────┐
+    │ 2. ВИДЕО                                            │
+    ├─────────────────────────────────────────────────────┤
+    │ <title>Название</title>                             │
+    │ <post-text>текст</post-text>                        │
+    │ <post-video src="video.mp4"></post-video>           │
+    └─────────────────────────────────────────────────────┘
     
-    3. ВИДЕО + ФАЙЛ:
-    <title>Название</title>
-    <post-text>текст</post-text>
-    <post-video src="video.mp4"></post-video>
-    <post-file src="arhiv.zip" name="skript.zip"></post-file>
+    ┌─────────────────────────────────────────────────────┐
+    │ 3. ВИДЕО + ФАЙЛ                                     │
+    ├─────────────────────────────────────────────────────┤
+    │ <title>Название</title>                             │
+    │ <post-text>текст</post-text>                        │
+    │ <post-video src="video.mp4"></post-video>           │
+    │ <post-file src="arhiv.zip" name="skript.zip"></post-file> │
+    └─────────────────────────────────────────────────────┘
     
-    4. ТОЛЬКО ФАЙЛ:
-    <title>Название</title>
-    <post-text>текст</post-text>
-    <post-file src="skript.py" name="payload.py"></post-file>
+    ┌─────────────────────────────────────────────────────┐
+    │ 4. ТОЛЬКО ФАЙЛ                                      │
+    ├─────────────────────────────────────────────────────┤
+    │ <title>Название</title>                             │
+    │ <post-text>текст</post-text>                        │
+    │ <post-file src="skript.py" name="payload.py"></post-file> │
+    └─────────────────────────────────────────────────────┘
     
-    ВСЕ МЕДИАФАЙЛЫ (фото/видео/архивы) КЛАДИ РЯДОМ С index.html, В ПУТИ УКАЗЫВАЙ ТОЛЬКО ИМЯ ФАЙЛА
+    ВСЕ МЕДИАФАЙЛЫ (фото/видео/архивы) КЛАДИ РЯДОМ С index.html,
+    В ПУТЯХ УКАЗЫВАЙ ТОЛЬКО ИМЯ ФАЙЛА
 -->
 </body>
 </html>
